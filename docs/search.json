@@ -2,9 +2,9 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "personal-website",
+    "title": "Josh Rosen",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+    "text": "Welcome to my site!\nMy name is Josh Rosen and I am a Doctoral student at Northeastern University studying causal inference and computational social science.\nMy interests include Bayesian inference, time series econometrics, and empirical applications to urban economics.\n \n  \n   \n  \n    \n     Email\n  \n  \n    \n     LinkedIn\n  \n  \n    \n     Resume"
   },
   {
     "objectID": "about.html",
@@ -12,5 +12,61 @@
     "title": "About",
     "section": "",
     "text": "About this site\n\n1 + 1\n\n[1] 2"
+  },
+  {
+    "objectID": "current_projects.html",
+    "href": "current_projects.html",
+    "title": "Current Projects",
+    "section": "",
+    "text": "Check back soon!"
+  },
+  {
+    "objectID": "cv.html",
+    "href": "cv.html",
+    "title": "Curriculum Vitae",
+    "section": "",
+    "text": "George Washington University, B.A. Public Policy \nGeorgetown University, M.S. Data Science \nNortheastern University, PhD Public Policy"
+  },
+  {
+    "objectID": "cv.html#research-experience",
+    "href": "cv.html#research-experience",
+    "title": "Curriculum Vitae",
+    "section": "RESEARCH EXPERIENCE",
+    "text": "RESEARCH EXPERIENCE\nComcast May 2022 - June 2023\nResearch Science Intern\nGeorgetown University, Massive Data Institute Fall 2022\nMDI Scholar\nGeorgetown University Global Cities Initiative Fall 2022 - Spring 2023\nGlobal Cities Student Scholar\nMcCourt School of Public Policy Fall 2021 - Spring 2022\nResearch Assistant\nCato Institute Fall 2020\nResearch Intern, Transportation and Housing/Land-use"
+  },
+  {
+    "objectID": "cv.html#teaching-experience",
+    "href": "cv.html#teaching-experience",
+    "title": "Curriculum Vitae",
+    "section": "TEACHING EXPERIENCE",
+    "text": "TEACHING EXPERIENCE\nMcCourt School of Public Policy Spring 2023\nGraduate Teaching Assistant, PPOL 561: Accelerated Statistics for Public Policy II\nMcCourt School of Public Policy Spring 2022\nGraduate Teaching Assistant, PPOL 670: Introduction to Data Science"
+  },
+  {
+    "objectID": "cv.html#other-experience",
+    "href": "cv.html#other-experience",
+    "title": "Curriculum Vitae",
+    "section": "OTHER EXPERIENCE",
+    "text": "OTHER EXPERIENCE\nMotive International Spring 2021\nResearch and Analysis Intern\nUSPS Office of Inspector General Fall 2021\nStudent Cooperative\nNovogradac and Company Summer 2021\nJunior Analyst Intern\nWhite Fox Scooters Summer 2020\nGovernment Relations Intern"
+  },
+  {
+    "objectID": "cv.html#conference-presentations",
+    "href": "cv.html#conference-presentations",
+    "title": "Curriculum Vitae",
+    "section": "CONFERENCE PRESENTATIONS",
+    "text": "CONFERENCE PRESENTATIONS\nGlobal Cities Student Research Summit (2023):\n\n“Analyzing the Impact of Bikeshare on Traffic Injuries: Evidence from the Boston Metropolitan Area”\n\nGlobal Cities Student Research Summit (2022):\n\n“Safety in Numbers: Examining the Impact of Automobile Occupancy on Urban Traffic Fatalities”"
+  },
+  {
+    "objectID": "cv.html#technical-skills",
+    "href": "cv.html#technical-skills",
+    "title": "Curriculum Vitae",
+    "section": "TECHNICAL SKILLS",
+    "text": "TECHNICAL SKILLS\nProgramming Languages: R, Python, SAS, MATLAB, BASH\nDatabase and Data Manipulation: SQL, PySpark, Hadoop, SparkSQL\nCloud Computing and Infrastructure: AWS\nStatistical Software Analysis: Stan, SPSS\nData Visualization and Reporting: Tableau, RShiny"
+  },
+  {
+    "objectID": "cv.html#technical-skills-1",
+    "href": "cv.html#technical-skills-1",
+    "title": "Curriculum Vitae",
+    "section": "TECHNICAL SKILLS",
+    "text": "TECHNICAL SKILLS\nProgramming Languages: R, Python, SAS, MATLAB, SQL, Stan\nSoftware: AWS, SPSS, Bash, PySpark, Hadoop, SparkSQL, MATLAB, Tableau"
   }
 ]

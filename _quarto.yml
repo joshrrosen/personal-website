@@ -3,16 +3,17 @@ project:
   output-dir: docs
 
 website:
-  title: "personal-website"
+  title: "Josh Rosen Personal Website"
   navbar:
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - current_projects.qmd
+      - cv.qmd
 
 format:
   html:
-    theme: cosmo
+    theme: sandstone
     css: styles.css
     toc: true
 

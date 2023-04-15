@@ -1,0 +1,96 @@
+---
+title: "Curriculum Vitae"
+editor: visual
+---
+
+## EDUCATION
+
+**George Washington University**, B.A. Public Policy \hfill 2021
+
+**Georgetown University**, M.S. Data Science \hfill 2023
+
+**Northeastern University**, PhD Public Policy \hfill
+
+------------------------------------------------------------------------
+
+## RESEARCH EXPERIENCE
+
+**Comcast** \hfill May 2022 - June 2023
+
+*Research Science Intern*
+
+**Georgetown University, Massive Data Institute** \hfill Fall 2022
+
+*MDI Scholar*
+
+**Georgetown University Global Cities Initiative** \hfill Fall 2022 - Spring 2023
+
+*Global Cities Student Scholar*
+
+**McCourt School of Public Policy** \hfill Fall 2021 - Spring 2022
+
+*Research Assistant*
+
+**Cato Institute** \hfill Fall 2020
+
+*Research Intern, Transportation and Housing/Land-use*
+
+------------------------------------------------------------------------
+
+## TEACHING EXPERIENCE
+
+**McCourt School of Public Policy** \hfill Spring 2023
+
+*Graduate Teaching Assistant, PPOL 561: Accelerated Statistics for Public Policy II*
+
+**McCourt School of Public Policy** \hfill Spring 2022
+
+*Graduate Teaching Assistant, PPOL 670: Introduction to Data Science*
+
+------------------------------------------------------------------------
+
+## OTHER EXPERIENCE
+
+**Motive International** \hfill Spring 2021
+
+*Research and Analysis Intern*
+
+**USPS Office of Inspector General** \hfill Fall 2021
+
+*Student Cooperative*
+
+**Novogradac and Company** \hfill Summer 2021
+
+*Junior Analyst Intern*
+
+**White Fox Scooters** \hfill Summer 2020
+
+*Government Relations Intern*
+
+------------------------------------------------------------------------
+
+## CONFERENCE PRESENTATIONS
+
+Global Cities Student Research Summit (2023): 
+
+- *"Analyzing the Impact of Bikeshare on Traffic Injuries: Evidence from the Boston Metropolitan Area"*
+
+Global Cities Student Research Summit (2022): 
+
+- *"Safety in Numbers: Examining the Impact of Automobile Occupancy on Urban Traffic Fatalities"*
+
+------------------------------------------------------------------------
+
+## TECHNICAL SKILLS
+
+**Programming Languages:** R, Python, SAS, MATLAB, BASH
+
+**Database and Data Manipulation:** SQL, PySpark, Hadoop, SparkSQL
+
+**Cloud Computing and Infrastructure:** AWS
+
+**Statistical Software Analysis:** Stan, SPSS
+
+**Data Visualization and Reporting:** Tableau, RShiny
+
+

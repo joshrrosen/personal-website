@@ -1,11 +1,31 @@
 ---
-title: "personal-website"
+title: "Josh Rosen"
+image: opening_pic.PNG
+resources: resume.pdf
+about:
+  template: jolla
+  image-shape: round
+  image-width: 15em
+  links:
+    - text: Email
+      icon: envelope
+      href: mailto:joshrrosen@gmail.com
+    - text: LinkedIn
+      icon: LinkedIn
+      href: https://www.linkedin.com/in/josh-rosen-6a3262174/
+    - text: Resume
+      icon: file-text
+      href: resume.pdf
+    
+  id: ppc
 ---
 
-This is a Quarto website.
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+:::{#ppc}
+Welcome to my site! 
 
-```{r}
-1 + 1
-```
+My name is Josh Rosen and I am a Doctoral student at Northeastern University studying causal inference and computational social science. 
+
+My interests include Bayesian inference, time series econometrics, and empirical applications to urban economics.
+
+:::
