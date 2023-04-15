@@ -16,6 +16,9 @@ about:
     - text: Resume
       icon: file-text
       href: resume.pdf
+    - text: GitHub
+      icon: GitHub
+      href: https://github.com/joshrrosen
     
   id: ppc
 ---
