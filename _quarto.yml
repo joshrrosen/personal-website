@@ -11,7 +11,9 @@ website:
       - href: current_projects.qmd
         text: Current Projects
       - href: cv.qmd
-        text: even_more.qmd
+        text: Curriculumn Vitae
+      - href: even_more.qmd
+        text: Other 'Projects'
 
 format:
   html:
