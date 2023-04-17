@@ -3,13 +3,14 @@ project:
   output-dir: docs
 
 website:
-  title: "Josh Rosen Personal Website"
+  title: "Romantically Involved with Statistics"
   navbar:
     left:
       - href: index.qmd
         text: Home
       - current_projects.qmd
       - cv.qmd
+      - even_more.qmd
 
 format:
   html:
