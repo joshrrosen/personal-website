@@ -71,13 +71,13 @@ editor: visual
 
 ## CONFERENCE PRESENTATIONS
 
-Global Cities Student Research Summit (2023): 
+Global Cities Student Research Summit (2023):
 
-- *"Analyzing the Impact of Bikeshare on Traffic Injuries: Evidence from the Boston Metropolitan Area"*
+-   *"Analyzing the Impact of Bikeshare on Traffic Injuries: Evidence from the Boston Metropolitan Area"*
 
-Global Cities Student Research Summit (2022): 
+Global Cities Student Research Summit (2022):
 
-- *"Safety in Numbers: Examining the Impact of Automobile Occupancy on Urban Traffic Fatalities"*
+-   *"Safety in Numbers: Examining the Impact of Automobile Occupancy on Urban Traffic Fatalities"*
 
 ------------------------------------------------------------------------
 
@@ -92,5 +92,3 @@ Global Cities Student Research Summit (2022):
 **Statistical Software Analysis:** Stan, SPSS
 
 **Data Visualization and Reporting:** Tableau, RShiny
-
-
