@@ -1,9 +1,6 @@
 ---
 title: "Introduction to Bayesian Hierarchical Modeling in R"
-output: 
-  html_document: default
-  pdf_document: default
-date: "2023-07-07"
+editor: visual
 ---
 
 ```{r, echo=FALSE, message=FALSE, results='hide', warning=FALSE}
