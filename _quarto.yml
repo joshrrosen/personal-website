@@ -14,7 +14,7 @@ website:
         text: Curriculumn Vitae
       - href: even_more.qmd
         text: Other 'Projects'
-      - href: blog_entries.qmd
+      - href: blog_formatting.qmd
         text: Blog
 
 format:
