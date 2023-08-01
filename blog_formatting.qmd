@@ -207,7 +207,7 @@ plot <- ggplot(result_df, aes(x = Income)) +
 
 ### Obtaining Rental Listing Data
 
-What *is* a bit more complicated is the process of obtaining rental listing data. Here I'm using Craigslist postings from 2020-2021, which can be found on the [Boston Data Portal](https://dataverse.harvard.edu/dataverse/BARI) managed by the [Boston Area Research Initiative](https://cssh.northeastern.edu/bari/) at Northeastern University. While this data gets updated yearly, we still have a significant lag which makes it more difficult to obtain a real-time account of the Boston rental market. This method also means we aren't able to obtain a useful covariates by which we might group listings (neighborhood, distance from public transit, number of bedrooms, etc).
+What *is* a bit more complicated is the process of obtaining rental listing data. Here I'm using Craigslist postings from 2020-2021, which can be found on the [Boston Data Portal](https://dataverse.harvard.edu/dataverse/BARI) managed by the [Boston Area Research Initiative](https://cssh.northeastern.edu/bari/) at Northeastern University. While this data gets updated yearly, we still have a significant lag which makes it more difficult to obtain a real-time account of the Boston rental market. This method also means we aren't able to obtain useful covariates by which we might group listings (neighborhood, distance from public transit, number of bedrooms, etc).
 
 #### Scraping Zillow
 
