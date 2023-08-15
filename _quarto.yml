@@ -10,8 +10,6 @@ website:
         text: Home
       - href: current_projects.qmd
         text: Current Projects
-      - href: cv.qmd
-        text: Curriculumn Vitae
       - href: even_more.qmd
         text: Other 'Projects'
       - href: blog_formatting.qmd
