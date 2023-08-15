@@ -146,10 +146,11 @@ library(tidyverse)
 library(ggthemes)
 library(stringr)
 
-df <- read.csv("D:\\Downloads\\CRAIGSLIST.Listings.csv") %>%
+url <- "https://dataverse.harvard.edu/api/access/datafile/6316627"
+
+df <- read_csv(url) %>%
   mutate(annual = as.numeric(PRICE*12)) %>%
   mutate(AREA_SQFT = as.numeric(AREA_SQFT)) %>%
-  #select(annual) %>%
   na.omit() # remove NAs
 
 ```
@@ -540,7 +541,7 @@ To formalize this, let's observe the conditional distribution $\alpha_j | \mathb
 
 [^11]: verifying this goes a bit beyond the scope of this blog, but we can use Bayes rule to express the full conditional distribution into probability density functions: $p(\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha}) \propto p(\mathbf{y} | \alpha_j, \sigma_y) \times p(\alpha_j | \mu_{\alpha}, \sigma_{\alpha})$.
 
-Given this, $E[\alpha_j]$ is given by $m_j = w_j\bar{y}_j + (1 - w_j) \mu_{\alpha}$, the weighted average of city sample mean $\bar{y}_j$ and the mean of city-level means $\mu_{\alpha}$. Notably, the weight $w_j$ is defined by $$w_j = \frac{n_j}{\sigma_y^2} \times (n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)^{-1},$$ which increases with $n_j$ (the number of observations, in this case monitors, in city $j$). While a bit long-winded, we can now see formally why the partially pooled estimate of $alpha_j$ is shrunk from the city mean towards the state mean for cities with small sample sizes.
+Given this, $E[\alpha_j]$ is given by $m_j = w_j\bar{y}_j + (1 - w_j) \mu_{\alpha}$, the weighted average of city sample mean $\bar{y}_j$ and the mean of city-level means $\mu_{\alpha}$. Notably, the weight $w_j$ is defined by $$w_j = \frac{n_j}{\sigma_y^2} \times (n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)^{-1},$$ which increases with $n_j$ (the number of observations, in this case monitors, in city $j$). While a bit long-winded, we can now see formally why the partially pooled estimate of $\alpha_j$ is shrunk from the city mean towards the state mean for cities with small sample sizes.
 
 Next, we can visualize this process to continue understanding the intuition behind partial pooling. Figure 3 plots the difference between $\alpha_j$ (the partially pooled mean of city $j$) and $\bar{y}_j$ (the sample mean for city $j$) on the y-axis and the number of monitors by city (the number of observations) on the x-axis. In doing so, we see that as the number of monitors increases (as the number of $n$ observations increase), the difference between our two mean estimates shrinks towards zero. In other words, here we intuitively visualize that as the number of observations in a given city increases, our estimated mean grows closer to the city sample mean.
 
