@@ -174,7 +174,17 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#section" id="toc-section" class="nav-link active" data-scroll-target="#section">——————————————————————————————</a></li>
+  <li><a href="#bayesian-hierarchical-modeling-part-2-working-with-stan" id="toc-bayesian-hierarchical-modeling-part-2-working-with-stan" class="nav-link active" data-scroll-target="#bayesian-hierarchical-modeling-part-2-working-with-stan">Bayesian Hierarchical Modeling Part 2: Working with Stan</a>
+  <ul class="collapse">
+  <li><a href="#introduction" id="toc-introduction" class="nav-link" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#stan-recap-i.e.-whats-the-gist" id="toc-stan-recap-i.e.-whats-the-gist" class="nav-link" data-scroll-target="#stan-recap-i.e.-whats-the-gist">Stan recap (i.e., what’s the gist?)</a></li>
+  <li><a href="#syntax-and-stuff" id="toc-syntax-and-stuff" class="nav-link" data-scroll-target="#syntax-and-stuff">Syntax and stuff</a>
+  <ul class="collapse">
+  <li><a href="#try-it-yourself" id="toc-try-it-yourself" class="nav-link" data-scroll-target="#try-it-yourself">Try it yourself</a></li>
+  </ul></li>
+  <li><a href="#hierarchical-modeling-in-stan" id="toc-hierarchical-modeling-in-stan" class="nav-link" data-scroll-target="#hierarchical-modeling-in-stan">Hierarchical Modeling in Stan</a></li>
+  <li><a href="#section" id="toc-section" class="nav-link" data-scroll-target="#section">——————————————————————————————</a></li>
+  </ul></li>
   <li><a href="#rental-markets-a-cool-graph-and-how-to-make-it" id="toc-rental-markets-a-cool-graph-and-how-to-make-it" class="nav-link" data-scroll-target="#rental-markets-a-cool-graph-and-how-to-make-it">Rental Markets: A Cool Graph and How to Make it</a>
   <ul class="collapse">
   <li><a href="#welcome" id="toc-welcome" class="nav-link" data-scroll-target="#welcome">Welcome!</a></li>
@@ -226,83 +236,217 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 </header>
 
+<section id="bayesian-hierarchical-modeling-part-2-working-with-stan" class="level1">
+<h1>Bayesian Hierarchical Modeling Part 2: Working with Stan</h1>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>Today’s follow-up to my original post on Bayesian Hierarchical Modeling in R will deviate slightly from the topics we covered in part 1. Instead, this post will focus entirely on the basics of writing models in Stan. A few keen observers may recognize that some elements promised in Part 1 are conveniently absent from today’s outline. Rest assured, Part 3 will be entirely dedicated to the following topics:</p>
+<ul>
+<li><p>What are fixed effects and why does this vocab make me want to drive me head into the wall</p></li>
+<li><p>Predicting non-sampled units at various levels of hierarchy</p></li>
+<li><p>Including unit-level predictors</p></li>
+<li><p>Setting priors, and the Bayesian case of hierarchical modeling</p></li>
+</ul>
+<p>While this is admittedly a much narrower scope that the preceding and succeeding posts in the series, I’m hoping this post will help readers build the much needed ground work for writing a broad array of models in Stan. As you will soon see, Stan is a beautiful - she is the love of my life - but she is not always a kind lover. Today we will learn how to love, and, if we’re lucky, we might even find some useful tricks for working with hierarchical models along the way. With this post out of the way, we’ll return in Part 3 to specifying hierarchical models with both ‘brms()’ and Stan directly.</p>
+</section>
+<section id="stan-recap-i.e.-whats-the-gist" class="level2">
+<h2 class="anchored" data-anchor-id="stan-recap-i.e.-whats-the-gist">Stan recap (i.e., what’s the gist?)</h2>
+<p>According to Stan’s website, “Stan is a state-of-the-art platform for statistical modeling and high-performance statistical computation.”<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> Perhaps a better way to view Stan is as a probabilistic programming language used for Bayesian inference. The beauty of Stan is that it allows us to efficiently perform posterior inference through Markov chain Monte Carlo sampling - which as we recall from Part 1, allows us to estimate models with no closed-form solution. In other words, Stan provides the framework to estimate flexible Bayesian models that would be far too computationally intensive in other languages. Because of Stan’s flexibility and efficiency, it is widely used by Bayesians in a variety of fields from Political Science to Biostatistics.</p>
+<p>You may now be thinking: sure, but doesn’t the ‘brms()’ library in R already allow this? Why should we invest in learning Stan’s syntax if we can already estimate many of these models directly in R? The answer is actually that you <strong>can’t</strong> estimate many of these models in ‘brms()’. To see why, let’s do a quick demo.</p>
+<p>In the first code chunk, we are specifying a simple linear regression with one predictor by using the ‘brms()’ library in R. Just as we saw last time, ‘brms()’ gives us a great method for specifying simpler models. In the next chunk, I execute the same model by in Stan through the R interface. In this simple example, writing the syntax of ‘brms()’ is much quicker. However, as we are already able to see, Stan provides a ton of flexibility in how we can parameterize our models. Because of this, Stan allows us to estimate models that are simply off the table in ‘brms()’. For a more complete list of models that you can run in Stan, I urge you to visit the <a href="https://mc-stan.org/docs/stan-users-guide/index.html">Stan User Guide</a>. Aside from just more complex models, Stan also makes it easy to mess around with your simple models, including setting priors, custom likelihoods, and limiting the parameter space.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specifying the linear regression model using brms</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(y <span class="sc">~</span> x, <span class="at">data =</span> data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specifying the linear regression model using Stan</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>fit <span class="ot">&lt;-</span> <span class="fu">stan</span>(</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_code =</span> <span class="st">"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="st">data {</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=0&gt; N;      // Number of data points</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] y;         // Response variable</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] x;         // Predictor variable</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="st">parameters {</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="st">  real alpha;          // Intercept</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="st">  real beta;           // Slope</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; sigma; // Error scale</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="st">model {</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="st">  // Likelihood</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="st">  y ~ normal(alpha + beta * x, sigma);</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="st">}"</span>,</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="at">data =</span> data,</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a><span class="at">iter =</span> <span class="dv">1000</span>,</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a><span class="at">chains =</span> <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="syntax-and-stuff" class="level2">
+<h2 class="anchored" data-anchor-id="syntax-and-stuff">Syntax and stuff</h2>
+<p>Working with Stan allows us to specify complex, flexible models. Unfortunately, to do so we first must learn the language’s syntax. Fortunately, it’s pretty intuitive if you’ve ever written out models by hand. The Stan User Guide, which I’ve linked to above, demonstrates the fundamental equivalence that we use the specify the likelihood–which I will demonstrate now.</p>
+<p>Imagine a simple linear regression model with a single predictor <span class="math inline">\(x_n\)</span>, and an intercept <span class="math inline">\(\alpha\)</span>, of the form: <span class="math display">\[y_n = \ \alpha \ + \beta x_n \ + \ \epsilon\]</span> where <span class="math display">\[\epsilon \sim \mathcal{N}(0, \sigma)\]</span>.</p>
+<p>This is equivalent to: <span class="math display">\[y_n - (\alpha + \beta x_n) \sim \mathcal{N}(0, \sigma)\]</span></p>
+<p>Finally, we can rearrange these terms to arrive at: <span class="math display">\[y_n \sim \mathcal{N}(\alpha + \beta x_n , \sigma)\]</span></p>
+<p>This final form is what we will use in Stan’s model block. Since I lifted this straight from the Stan User Guide, I assure you that anything I could say regarding Stan syntax is better said there. If I’ve done my job at all you’ll go check it our for yourself, and we can dedicate this space to more important things (read: Hierarchical modeling). Don’t you dare even think about coming back until your decomposing the world into data, parameter, model, and generated quantities blocks all by yourself.</p>
+<section id="try-it-yourself" class="level3">
+<h3 class="anchored" data-anchor-id="try-it-yourself">Try it yourself</h3>
+<p>To help you on your journey, I’ve created a <a href="https://stanquest.tiiny.site/">fun little quiz that let’s you practice formulating models in Stan</a>. Nothing special, but I recognized early that a disapointing hinderence to converting new Stan users is the lack of a Stan tutorial on sites like Codecademy. I won’t lie, I made it in an afternoon and it’s pretty sparse–but who are you to complain?</p>
+</section>
+</section>
+<section id="hierarchical-modeling-in-stan" class="level2">
+<h2 class="anchored" data-anchor-id="hierarchical-modeling-in-stan">Hierarchical Modeling in Stan</h2>
+<p>To motivate the final part in this series, let’s also see how we might specify a hierarchical model in Stan, and then compare it to what we might have done in ‘brms()’. For this, we’ll once again use our simulated air quality data from Part 1.</p>
+<p>Let’s begin with our Stan model. In the following code chunk, I’m querying Stan directly from R and therefore saving myself the step of setting up a distinct Stan file. There’s a lot going on here, so let’s go through each chunk one at a time. This code specifies a hierarchical linear regression model with <span class="math inline">\(J\)</span> groups and <span class="math inline">\(K\)</span> predictors. The parameters <span class="math inline">\(\alpha\)</span>, <span class="math inline">\(\beta\)</span>, <span class="math inline">\(\gamma\)</span> represent the intercept, coefficients on the predictors, and group-level intercepts respectively. The parameters <span class="math inline">\(\sigma_{\alpha}\)</span>, <span class="math inline">\(\sigma_{\beta}\)</span> and <span class="math inline">\(\sigma\)</span> represent the standard deviations of our priors. We then allow the likelihood <span class="math inline">\(\mathcal{N}(\cdot)\)</span> to follow a normal distribution. In other words, our Stan code represents the following model: <span class="math display">\[y_n \sim \mathcal{N}(\alpha + \gamma_j + \mathbf{X}_n \times \beta, \sigma)\]</span></p>
+<p>Notably, I don’t set priors on any of our parameters since we’ll cover prior selection in more detail in Part 3. Feel free to also ignore the concept of predictors in hierarchical models until we formally cover it next time.</p>
+<div class="cell">
+
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># query Stan through R</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>stan_fit <span class="ot">&lt;-</span> <span class="fu">stan</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_code =</span> <span class="st">"</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">  </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">  data {</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=0&gt; N;                   // Total number of observations</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=1&gt; K;                   // Number of predictor variables</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=1&gt; J;                   // Number of groups</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">  int&lt;lower=1, upper=J&gt; group[N];   // Group assignment for each observation</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">  matrix[N, K] X;                   // Predictor matrix</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[N] y;                      // Response variable</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">parameters {</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">  real alpha;                       // Intercept</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[K] beta;                   // Coefficients for predictor variables</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="st">  vector[J] gamma;                  // Group-level intercepts</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; sigma_alpha;        // Standard deviation of group intercepts</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; sigma_beta;         // Standard deviation of coefficients</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="st">  real&lt;lower=0&gt; sigma;              // Residual standard deviation</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="st">model {</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="st">  // Hierarchical linear regression model</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="st">  for (j in 1:J) {</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="st">    for (n in 1:N) {</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="st">      if (group[n] == j) {</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="st">        y[n] ~ normal(alpha + gamma[j] + X[n] * beta, sigma); // Likelihood of the data</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="st">      }</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="st">    }</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="st">  }</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="st">}"</span>,</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> <span class="fu">list</span>(<span class="at">N =</span> <span class="fu">nrow</span>(dat),</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>              <span class="at">K =</span> <span class="dv">1</span>,</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>              <span class="at">J =</span> <span class="fu">length</span>(<span class="fu">unique</span>(dat<span class="sc">$</span>city)),</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>              <span class="at">group =</span> <span class="fu">as.integer</span>(<span class="fu">factor</span>(dat<span class="sc">$</span>city)),</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>              <span class="at">X =</span> <span class="fu">as.matrix</span>(dat[, <span class="st">"pred"</span>, <span class="at">drop =</span> <span class="cn">FALSE</span>]),</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>              <span class="at">y =</span> dat<span class="sc">$</span>aqi</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>              ),</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">1000</span>,</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we also run the same model in ‘brms()’. Here, the term ‘(1 | city)’ represents random intercepts for each city, ‘1’ represents the intercept, and the fixed effect for the predictor ‘pred’ is shared across all cities. This is analogous to the hierarchical linear regression in Stan.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># fit the same model in brms</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>brms_fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  aqi <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> city) <span class="sc">+</span> pred,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dat,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">iter =</span> <span class="dv">1000</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Finally, let’s plot a histogram of both our predictor coefficient estimates and intercept estimates obtained from the posterior. Figures 1 and 2 display both, respectively. As a result, we are able to see that both Stan and ‘brms()’ allow us to specify hierarchical models that will achieve the same results. However, as we will continue learning in Part 3, Stan provides a much more flexible framework for parameterizing both complex and simple models.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-6-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
 <section id="section" class="level2">
 <h2 class="anchored" data-anchor-id="section">——————————————————————————————</h2>
+</section>
 </section>
 <section id="rental-markets-a-cool-graph-and-how-to-make-it" class="level1">
 <h1>Rental Markets: A Cool Graph and How to Make it</h1>
 <section id="welcome" class="level2">
 <h2 class="anchored" data-anchor-id="welcome">Welcome!</h2>
 <p><em>August 1, 2023</em></p>
-<p>Today’s post will be a pretty short one. Let me set the stage: it’s 9pm on a beautiful Friday night in the middle of the Boston summer. You’re on the on the Common, watching Shakespeare live with a few friends you met rock climbing. Looking up at the Boston skyline you start to wonder: what percent of this could me mine?<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p>
+<p>Today’s post will be a pretty short one. Let me set the stage: it’s 9pm on a beautiful Friday night in the middle of the Boston summer. You’re on the on the Common, watching Shakespeare live with a few friends you met rock climbing. Looking up at the Boston skyline you start to wonder: what percent of this could me mine?<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
 </section>
 <section id="descriptive-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="descriptive-analysis">Descriptive Analysis</h2>
-<p>It’s a question as old as time, and one that I set out to answer so you wouldn’t have to.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a> In more explicit terms, here I’ll present a descriptive analysis of Boston/Boston area rental unit postings with the goal of visualizing what percent of listings are affordable by income level.</p>
+<p>It’s a question as old as time, and one that I set out to answer so you wouldn’t have to.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> In more explicit terms, here I’ll present a descriptive analysis of Boston/Boston area rental unit postings with the goal of visualizing what percent of listings are affordable by income level.</p>
 <p>On a more serious note, this post will be far less technical than my series on Bayesian Hierarchical Modeling in R, and certainly not an academic analysis of rental markets. Instead, we’re here to make a cool graph, promote some data, and poorly scrape Zillow. Let’s get crazy.</p>
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid" width="672"></p>
 </div>
-<p>In this plot, we see three sigmoid-esq curves representing the percent of rental units affordable under the specified budgets. Households are generally expected to pay 30% of their income towards housing, but in many markets this is no longer attainable.<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> Households that pay greater than 30% of their income towards rent are denoted as <em>rent burdened</em>, and households that pay greater than 50% of their income on rent are known as <em>severely rent burdened</em>. I therefore construct the three lines with these thresholds in mind.</p>
-<p>Unsurprisingly, the majority of listings are relatively affordable for households making roughly $75,000/yr, or just below the state’s median household income.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>. We know from much more comprehensive analysis that in the city of Boston, 52% of households are rent burdened, and 34% of BIPOC renters are severely burdened.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a></p>
-<p>Another way to view this data might be just to produce a simple histogram displaying the distribution of listing prices. Formatting the data like this also helps to validate our existing knowledge of the problem with the data we’ve obtained. For example, we know that the average price of a rental listing in Boston during 2021 was $2,534, but we see here that the state-wide Craigslist listings are centered significantly lower.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>In this plot, we see three sigmoid-esq curves representing the percent of rental units affordable under the specified budgets. Households are generally expected to pay 30% of their income towards housing, but in many markets this is no longer attainable.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a> Households that pay greater than 30% of their income towards rent are denoted as <em>rent burdened</em>, and households that pay greater than 50% of their income on rent are known as <em>severely rent burdened</em>. I therefore construct the three lines with these thresholds in mind.</p>
+<p>Unsurprisingly, the majority of listings are relatively affordable for households making roughly $75,000/yr, or just below the state’s median household income.<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a>. We know from much more comprehensive analysis that in the city of Boston, 52% of households are rent burdened, and 34% of BIPOC renters are severely burdened.<a href="#fn6" class="footnote-ref" id="fnref6" role="doc-noteref"><sup>6</sup></a></p>
+<p>Another way to view this data might be just to produce a simple histogram displaying the distribution of listing prices. Formatting the data like this also helps to validate our existing knowledge of the problem with the data we’ve obtained. For example, we know that the average price of a rental listing in Boston during 2021 was $2,534, but we see here that the state-wide Craigslist listings are centered significantly lower.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a></p>
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
 </div>
-<p>Finally, let’s note some important qualifiers. First, the data I used comes from Craigslist postings scraped during and just after the pandemic. As a result, it’s likely that prices are skewed downward both owing to the selection bias of Craigslist, as well as the pandemic’s impact on rental markets.<a href="#fn7" class="footnote-ref" id="fnref7" role="doc-noteref"><sup>7</sup></a>. In addition, this data contains listings from across the state, rather than simply the Boston metropolitan area. Finally, it’s important to note that the distribution of rental listings may not be representative of what rental households pay on average. In other words, this data answers a specific question, and it does a <em>mediocre</em> job to do so.</p>
+<p>Finally, let’s note some important qualifiers. First, the data I used comes from Craigslist postings scraped during and just after the pandemic. As a result, it’s likely that prices are skewed downward both owing to the selection bias of Craigslist, as well as the pandemic’s impact on rental markets.<a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a>. In addition, this data contains listings from across the state, rather than simply the Boston metropolitan area. Finally, it’s important to note that the distribution of rental listings may not be representative of what rental households pay on average. In other words, this data answers a specific question, and it does a <em>mediocre</em> job to do so.</p>
 </section>
 <section id="replication" class="level2">
 <h2 class="anchored" data-anchor-id="replication">Replication</h2>
 <section id="creating-the-plot" class="level3">
 <h3 class="anchored" data-anchor-id="creating-the-plot">Creating the Plot</h3>
-<p>I’ve included the code below, but there’s nothing too complicated in how to organize the data for a presentation like what we see here. The one major thing to note here is that the code assumes your dataframe is titled <strong>df</strong><a href="#fn8" class="footnote-ref" id="fnref8" role="doc-noteref"><sup>8</sup></a>, and annual rental costs are organized in a column called <strong>annual</strong>.</p>
+<p>I’ve included the code below, but there’s nothing too complicated in how to organize the data for a presentation like what we see here. The one major thing to note here is that the code assumes your dataframe is titled <strong>df</strong><a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a>, and annual rental costs are organized in a column called <strong>annual</strong>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 0: load your packages</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggthemes)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Define the affordability thresholds (e.g., 30%, 40%, and 50%)</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>affordability_thresholds <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Generate a sequence of incomes from 40,000 to 500,000</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>income_sequence <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">25000</span>, <span class="dv">250000</span>, <span class="at">by =</span> <span class="dv">50</span>)</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Create a new dataframe to store the results</span></span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>result_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Income =</span> income_sequence)</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 4: Calculate the percentage of affordable units for each income level and each threshold</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (threshold <span class="cf">in</span> affordability_thresholds) {</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  result_df[<span class="fu">paste0</span>(<span class="st">"Percentage_Affordable_"</span>, threshold <span class="sc">*</span> <span class="dv">100</span>)] <span class="ot">&lt;-</span> <span class="fu">sapply</span>(result_df<span class="sc">$</span>Income, <span class="cf">function</span>(income) {</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    affordable_units <span class="ot">&lt;-</span> df<span class="sc">$</span>annual <span class="sc">&lt;=</span> income <span class="sc">*</span> threshold</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    percentage_affordable <span class="ot">&lt;-</span> <span class="fu">sum</span>(affordable_units) <span class="sc">/</span> <span class="fu">length</span>(affordable_units) <span class="sc">*</span> <span class="dv">100</span></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(percentage_affordable)</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 5: Plot the results using ggplot2 with labels</span></span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(result_df, <span class="fu">aes</span>(<span class="at">x =</span> Income)) <span class="sc">+</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_30), <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_40), <span class="at">color =</span> <span class="st">"green"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_50), <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">comma_format</span>()) <span class="sc">+</span></span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Household Income"</span>, <span class="at">y =</span> <span class="st">"Percentage of Apartments Affordable"</span>,</span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Affordability of Apartments in Massachusetts"</span>,</span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Craigslist Postings: 2020-2021"</span>,</span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Affordability Threshold"</span>) <span class="sc">+</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels for the lines (showing line names)</span></span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_30, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"30% of Income"</span>),</span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">vjust =</span> <span class="dv">18</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_40, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"40% of Income"</span>),</span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"green"</span>, <span class="at">vjust =</span> <span class="dv">16</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_50, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"50% of Income"</span>),</span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">vjust =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_solarized</span>() <span class="sc">+</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>), <span class="co"># Center the plot title</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>),    <span class="co"># Center the subtitle</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">60</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)    <span class="co"># Add some margin around the plot</span></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># step 0: load your packages</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggthemes)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stringr)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 1: Define the affordability thresholds (e.g., 30%, 40%, and 50%)</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>affordability_thresholds <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.3</span>, <span class="fl">0.4</span>, <span class="fl">0.5</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 2: Generate a sequence of incomes from 40,000 to 500,000</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>income_sequence <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">25000</span>, <span class="dv">250000</span>, <span class="at">by =</span> <span class="dv">50</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 3: Create a new dataframe to store the results</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>result_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Income =</span> income_sequence)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 4: Calculate the percentage of affordable units for each income level and each threshold</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (threshold <span class="cf">in</span> affordability_thresholds) {</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  result_df[<span class="fu">paste0</span>(<span class="st">"Percentage_Affordable_"</span>, threshold <span class="sc">*</span> <span class="dv">100</span>)] <span class="ot">&lt;-</span> <span class="fu">sapply</span>(result_df<span class="sc">$</span>Income, <span class="cf">function</span>(income) {</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    affordable_units <span class="ot">&lt;-</span> df<span class="sc">$</span>annual <span class="sc">&lt;=</span> income <span class="sc">*</span> threshold</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>    percentage_affordable <span class="ot">&lt;-</span> <span class="fu">sum</span>(affordable_units) <span class="sc">/</span> <span class="fu">length</span>(affordable_units) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">return</span>(percentage_affordable)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Step 5: Plot the results using ggplot2 with labels</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(result_df, <span class="fu">aes</span>(<span class="at">x =</span> Income)) <span class="sc">+</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_30), <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_40), <span class="at">color =</span> <span class="st">"green"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> Percentage_Affordable_50), <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">size =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">comma_format</span>()) <span class="sc">+</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Household Income"</span>, <span class="at">y =</span> <span class="st">"Percentage of Apartments Affordable"</span>,</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Affordability of Apartments in Massachusetts"</span>,</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Craigslist Postings: 2020-2021"</span>,</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Affordability Threshold"</span>) <span class="sc">+</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add labels for the lines (showing line names)</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_30, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"30% of Income"</span>),</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">vjust =</span> <span class="dv">18</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_40, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"40% of Income"</span>),</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"green"</span>, <span class="at">vjust =</span> <span class="dv">16</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">200000</span>, <span class="at">y =</span> <span class="fu">tail</span>(result_df<span class="sc">$</span>Percentage_Affordable_50, <span class="dv">1</span>), <span class="at">label =</span> <span class="st">"50% of Income"</span>),</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>            <span class="fu">aes</span>(x, y, <span class="at">label =</span> label), <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">vjust =</span> <span class="dv">14</span>, <span class="at">hjust =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_solarized</span>() <span class="sc">+</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>), <span class="co"># Center the plot title</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.subtitle =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>),    <span class="co"># Center the subtitle</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">60</span>, <span class="dv">20</span>, <span class="dv">20</span>, <span class="dv">20</span>)    <span class="co"># Add some margin around the plot</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="obtaining-rental-listing-data" class="level3">
@@ -312,133 +456,133 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h4 class="anchored" data-anchor-id="scraping-zillow">Scraping Zillow</h4>
 <p>Alternatively, I’ve included the Python code to scrape similar data from Zillow. Note that Zillow is infamous for making their listings difficult to obtain, so I cannot promise this scraper will work in the future. Nevertheless, this methods and the subsequent cleaning process below manages to produce a dataframe with all the descriptive data we might want. To tweak the location parameters, find the geography you want on Zillow and search the coordinates from the website’s source code. By doing this you’ll be able to obtain geographic bounds for any area/rental market.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>from urllib.parse import urlencode</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>import json</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>import httpx</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>BASE_HEADERS <span class="ot">=</span> {</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-language"</span><span class="sc">:</span> <span class="st">"en-US,en;q=0.9"</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"user-agent"</span><span class="sc">:</span> <span class="st">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"</span>,</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept"</span><span class="sc">:</span> <span class="st">"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"</span>,</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-language"</span><span class="sc">:</span> <span class="st">"en-US;en;q=0.9"</span>,</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-encoding"</span><span class="sc">:</span> <span class="st">"gzip, deflate, br"</span>,</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>url <span class="ot">=</span> <span class="st">"https://www.zillow.com/search/GetSearchPageState.htm?"</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>parameters <span class="ot">=</span> {</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"searchQueryState"</span><span class="sc">:</span> {</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pagination"</span><span class="sc">:</span> {},</span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"usersSearchTerm"</span><span class="sc">:</span> <span class="st">"Boston, MA"</span>,</span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"mapBounds"</span><span class="sc">:</span> {</span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Adjust these coordinates to include the area of Boston</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>            <span class="st">"west"</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">71.191155</span>,</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>            <span class="st">"east"</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">71.000257</span>,</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>            <span class="st">"south"</span><span class="sc">:</span> <span class="fl">42.330834</span>,</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>            <span class="st">"north"</span><span class="sc">:</span> <span class="fl">42.400819</span>,</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>        },</span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"isForRent"</span><span class="sc">:</span> True,         <span class="co"># Include rental properties only</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"isForSaleByAgent"</span><span class="sc">:</span> False  <span class="co"># Exclude properties listed for sale by agents</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wants"</span><span class="sc">:</span> {</span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cat1"</span><span class="sc">:</span> [<span class="st">"listResults"</span>, <span class="st">"mapResults"</span>], <span class="st">"cat2"</span><span class="sc">:</span> [<span class="st">"total"</span>]</span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    },</span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"requestId"</span><span class="sc">:</span> <span class="dv">2</span>,</span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>response <span class="ot">=</span> <span class="fu">httpx.get</span>(url <span class="sc">+</span> <span class="fu">urlencode</span>(parameters), <span class="at">headers=</span>BASE_HEADERS)</span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>assert response.status_code <span class="sc">==</span> <span class="dv">200</span>, <span class="st">"request has been blocked"</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">response.json</span>()</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>results <span class="ot">=</span> <span class="fu">response.json</span>()[<span class="st">"cat1"</span>][<span class="st">"searchResults"</span>][<span class="st">"mapResults"</span>]</span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">json.dumps</span>(results, <span class="at">indent=</span><span class="dv">2</span>))</span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(f<span class="st">"found {len(results)} rental property results in Boston"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>from urllib.parse import urlencode</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>import json</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>import httpx</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>BASE_HEADERS <span class="ot">=</span> {</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-language"</span><span class="sc">:</span> <span class="st">"en-US,en;q=0.9"</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"user-agent"</span><span class="sc">:</span> <span class="st">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36"</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept"</span><span class="sc">:</span> <span class="st">"text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-language"</span><span class="sc">:</span> <span class="st">"en-US;en;q=0.9"</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"accept-encoding"</span><span class="sc">:</span> <span class="st">"gzip, deflate, br"</span>,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>url <span class="ot">=</span> <span class="st">"https://www.zillow.com/search/GetSearchPageState.htm?"</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>parameters <span class="ot">=</span> {</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"searchQueryState"</span><span class="sc">:</span> {</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>        <span class="st">"pagination"</span><span class="sc">:</span> {},</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        <span class="st">"usersSearchTerm"</span><span class="sc">:</span> <span class="st">"Boston, MA"</span>,</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>        <span class="st">"mapBounds"</span><span class="sc">:</span> {</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>            <span class="co"># Adjust these coordinates to include the area of Boston</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>            <span class="st">"west"</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">71.191155</span>,</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>            <span class="st">"east"</span><span class="sc">:</span> <span class="sc">-</span><span class="fl">71.000257</span>,</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>            <span class="st">"south"</span><span class="sc">:</span> <span class="fl">42.330834</span>,</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            <span class="st">"north"</span><span class="sc">:</span> <span class="fl">42.400819</span>,</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>        },</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"isForRent"</span><span class="sc">:</span> True,         <span class="co"># Include rental properties only</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"isForSaleByAgent"</span><span class="sc">:</span> False  <span class="co"># Exclude properties listed for sale by agents</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wants"</span><span class="sc">:</span> {</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        <span class="st">"cat1"</span><span class="sc">:</span> [<span class="st">"listResults"</span>, <span class="st">"mapResults"</span>], <span class="st">"cat2"</span><span class="sc">:</span> [<span class="st">"total"</span>]</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">"requestId"</span><span class="sc">:</span> <span class="dv">2</span>,</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>response <span class="ot">=</span> <span class="fu">httpx.get</span>(url <span class="sc">+</span> <span class="fu">urlencode</span>(parameters), <span class="at">headers=</span>BASE_HEADERS)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>assert response.status_code <span class="sc">==</span> <span class="dv">200</span>, <span class="st">"request has been blocked"</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">response.json</span>()</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>results <span class="ot">=</span> <span class="fu">response.json</span>()[<span class="st">"cat1"</span>][<span class="st">"searchResults"</span>][<span class="st">"mapResults"</span>]</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">json.dumps</span>(results, <span class="at">indent=</span><span class="dv">2</span>))</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(f<span class="st">"found {len(results)} rental property results in Boston"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>import pandas as pd</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>def <span class="fu">parse_results_to_dataframe</span>(results)<span class="sc">:</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize empty lists to store extracted information</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    zpid_list <span class="ot">=</span> []</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    price_list <span class="ot">=</span> []</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    beds_list <span class="ot">=</span> []</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    baths_list <span class="ot">=</span> []</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    area_list <span class="ot">=</span> []</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    lat_list <span class="ot">=</span> []</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    long_list <span class="ot">=</span> []</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    status_type_list <span class="ot">=</span> []</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    price_label_list <span class="ot">=</span> []</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    street_address_list <span class="ot">=</span> []</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    zipcode_list <span class="ot">=</span> []</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    city_list <span class="ot">=</span> []</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    state_list <span class="ot">=</span> []</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through each element in the results list</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> data <span class="cf">in</span> results<span class="sc">:</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        zpid <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'zpid'</span>, None)</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>        price <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'price'</span>, None)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>        beds <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'beds'</span>, None)</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        baths <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'baths'</span>, None)</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        area <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'area'</span>, None)</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        latLong <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'latLong'</span>, None)</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        statusType <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'statusType'</span>, None)</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>        priceLabel <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'priceLabel'</span>, None)</span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        address <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'address'</span>, None)</span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> latLong<span class="sc">:</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>            latitude <span class="ot">=</span> <span class="fu">latLong.get</span>(<span class="st">'latitude'</span>, None)</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>            longitude <span class="ot">=</span> <span class="fu">latLong.get</span>(<span class="st">'longitude'</span>, None)</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span><span class="sc">:</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>            latitude <span class="ot">=</span> None</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>            longitude <span class="ot">=</span> None</span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extracting streetAddress, city, state, and zipcode separately</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>        streetAddress <span class="ot">=</span> city <span class="ot">=</span> state <span class="ot">=</span> zipcode <span class="ot">=</span> None</span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> address<span class="sc">:</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>            address_parts <span class="ot">=</span> <span class="fu">address.split</span>(<span class="st">', '</span>)</span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>            streetAddress <span class="ot">=</span> address_parts[<span class="dv">0</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> None</span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>            city <span class="ot">=</span> address_parts[<span class="dv">1</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> None</span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>            state <span class="ot">=</span> address_parts[<span class="dv">2</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">2</span> <span class="cf">else</span> None</span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>            zipcode <span class="ot">=</span> address_parts[<span class="dv">3</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">3</span> <span class="cf">else</span> None</span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append data to respective lists</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>        <span class="fu">zpid_list.append</span>(zpid)</span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>        <span class="fu">price_list.append</span>(price)</span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>        <span class="fu">beds_list.append</span>(beds)</span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>        <span class="fu">baths_list.append</span>(baths)</span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        <span class="fu">area_list.append</span>(area)</span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lat_list.append</span>(latitude)</span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>        <span class="fu">long_list.append</span>(longitude)</span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>        <span class="fu">status_type_list.append</span>(statusType)</span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>        <span class="fu">price_label_list.append</span>(priceLabel)</span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        <span class="fu">street_address_list.append</span>(streetAddress)</span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>        <span class="fu">zipcode_list.append</span>(zipcode)</span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        <span class="fu">city_list.append</span>(city)</span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>        <span class="fu">state_list.append</span>(state)</span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a dictionary to convert lists to a dataframe</span></span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>    data_dict <span class="ot">=</span> {</span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="st">'zpid'</span><span class="sc">:</span> zpid_list,</span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>        <span class="st">'price'</span><span class="sc">:</span> price_list,</span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>        <span class="st">'beds'</span><span class="sc">:</span> beds_list,</span>
-<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">'baths'</span><span class="sc">:</span> baths_list,</span>
-<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a>        <span class="st">'area'</span><span class="sc">:</span> area_list,</span>
-<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a>        <span class="st">'latitude'</span><span class="sc">:</span> lat_list,</span>
-<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a>        <span class="st">'longitude'</span><span class="sc">:</span> long_list,</span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a>        <span class="st">'statusType'</span><span class="sc">:</span> status_type_list,</span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>        <span class="st">'priceLabel'</span><span class="sc">:</span> price_label_list,</span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>        <span class="st">'streetAddress'</span><span class="sc">:</span> street_address_list,</span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>        <span class="st">'zipcode'</span><span class="sc">:</span> zipcode_list,</span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>        <span class="st">'city'</span><span class="sc">:</span> city_list,</span>
-<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="st">'state'</span><span class="sc">:</span> state_list</span>
-<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the dataframe</span></span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">=</span> <span class="fu">pd.DataFrame</span>(data_dict)</span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>    return df</span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Call the function and get the resulting dataframe</span></span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">parse_results_to_dataframe</span>(results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>import pandas as pd</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>def <span class="fu">parse_results_to_dataframe</span>(results)<span class="sc">:</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Initialize empty lists to store extracted information</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    zpid_list <span class="ot">=</span> []</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    price_list <span class="ot">=</span> []</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    beds_list <span class="ot">=</span> []</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    baths_list <span class="ot">=</span> []</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>    area_list <span class="ot">=</span> []</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    lat_list <span class="ot">=</span> []</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    long_list <span class="ot">=</span> []</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    status_type_list <span class="ot">=</span> []</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    price_label_list <span class="ot">=</span> []</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    street_address_list <span class="ot">=</span> []</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>    zipcode_list <span class="ot">=</span> []</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    city_list <span class="ot">=</span> []</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>    state_list <span class="ot">=</span> []</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Iterate through each element in the results list</span></span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> data <span class="cf">in</span> results<span class="sc">:</span></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>        zpid <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'zpid'</span>, None)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>        price <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'price'</span>, None)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a>        beds <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'beds'</span>, None)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a>        baths <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'baths'</span>, None)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>        area <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'area'</span>, None)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>        latLong <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'latLong'</span>, None)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a>        statusType <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'statusType'</span>, None)</span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a>        priceLabel <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'priceLabel'</span>, None)</span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>        address <span class="ot">=</span> <span class="fu">data.get</span>(<span class="st">'address'</span>, None)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> latLong<span class="sc">:</span></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>            latitude <span class="ot">=</span> <span class="fu">latLong.get</span>(<span class="st">'latitude'</span>, None)</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>            longitude <span class="ot">=</span> <span class="fu">latLong.get</span>(<span class="st">'longitude'</span>, None)</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span><span class="sc">:</span></span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a>            latitude <span class="ot">=</span> None</span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>            longitude <span class="ot">=</span> None</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Extracting streetAddress, city, state, and zipcode separately</span></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a>        streetAddress <span class="ot">=</span> city <span class="ot">=</span> state <span class="ot">=</span> zipcode <span class="ot">=</span> None</span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> address<span class="sc">:</span></span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>            address_parts <span class="ot">=</span> <span class="fu">address.split</span>(<span class="st">', '</span>)</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a>            streetAddress <span class="ot">=</span> address_parts[<span class="dv">0</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> None</span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>            city <span class="ot">=</span> address_parts[<span class="dv">1</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">1</span> <span class="cf">else</span> None</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>            state <span class="ot">=</span> address_parts[<span class="dv">2</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">2</span> <span class="cf">else</span> None</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a>            zipcode <span class="ot">=</span> address_parts[<span class="dv">3</span>]<span class="fu">.strip</span>() <span class="cf">if</span> <span class="fu">len</span>(address_parts) <span class="sc">&gt;</span> <span class="dv">3</span> <span class="cf">else</span> None</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Append data to respective lists</span></span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a>        <span class="fu">zpid_list.append</span>(zpid)</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a>        <span class="fu">price_list.append</span>(price)</span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>        <span class="fu">beds_list.append</span>(beds)</span>
+<span id="cb7-51"><a href="#cb7-51" aria-hidden="true" tabindex="-1"></a>        <span class="fu">baths_list.append</span>(baths)</span>
+<span id="cb7-52"><a href="#cb7-52" aria-hidden="true" tabindex="-1"></a>        <span class="fu">area_list.append</span>(area)</span>
+<span id="cb7-53"><a href="#cb7-53" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lat_list.append</span>(latitude)</span>
+<span id="cb7-54"><a href="#cb7-54" aria-hidden="true" tabindex="-1"></a>        <span class="fu">long_list.append</span>(longitude)</span>
+<span id="cb7-55"><a href="#cb7-55" aria-hidden="true" tabindex="-1"></a>        <span class="fu">status_type_list.append</span>(statusType)</span>
+<span id="cb7-56"><a href="#cb7-56" aria-hidden="true" tabindex="-1"></a>        <span class="fu">price_label_list.append</span>(priceLabel)</span>
+<span id="cb7-57"><a href="#cb7-57" aria-hidden="true" tabindex="-1"></a>        <span class="fu">street_address_list.append</span>(streetAddress)</span>
+<span id="cb7-58"><a href="#cb7-58" aria-hidden="true" tabindex="-1"></a>        <span class="fu">zipcode_list.append</span>(zipcode)</span>
+<span id="cb7-59"><a href="#cb7-59" aria-hidden="true" tabindex="-1"></a>        <span class="fu">city_list.append</span>(city)</span>
+<span id="cb7-60"><a href="#cb7-60" aria-hidden="true" tabindex="-1"></a>        <span class="fu">state_list.append</span>(state)</span>
+<span id="cb7-61"><a href="#cb7-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-62"><a href="#cb7-62" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create a dictionary to convert lists to a dataframe</span></span>
+<span id="cb7-63"><a href="#cb7-63" aria-hidden="true" tabindex="-1"></a>    data_dict <span class="ot">=</span> {</span>
+<span id="cb7-64"><a href="#cb7-64" aria-hidden="true" tabindex="-1"></a>        <span class="st">'zpid'</span><span class="sc">:</span> zpid_list,</span>
+<span id="cb7-65"><a href="#cb7-65" aria-hidden="true" tabindex="-1"></a>        <span class="st">'price'</span><span class="sc">:</span> price_list,</span>
+<span id="cb7-66"><a href="#cb7-66" aria-hidden="true" tabindex="-1"></a>        <span class="st">'beds'</span><span class="sc">:</span> beds_list,</span>
+<span id="cb7-67"><a href="#cb7-67" aria-hidden="true" tabindex="-1"></a>        <span class="st">'baths'</span><span class="sc">:</span> baths_list,</span>
+<span id="cb7-68"><a href="#cb7-68" aria-hidden="true" tabindex="-1"></a>        <span class="st">'area'</span><span class="sc">:</span> area_list,</span>
+<span id="cb7-69"><a href="#cb7-69" aria-hidden="true" tabindex="-1"></a>        <span class="st">'latitude'</span><span class="sc">:</span> lat_list,</span>
+<span id="cb7-70"><a href="#cb7-70" aria-hidden="true" tabindex="-1"></a>        <span class="st">'longitude'</span><span class="sc">:</span> long_list,</span>
+<span id="cb7-71"><a href="#cb7-71" aria-hidden="true" tabindex="-1"></a>        <span class="st">'statusType'</span><span class="sc">:</span> status_type_list,</span>
+<span id="cb7-72"><a href="#cb7-72" aria-hidden="true" tabindex="-1"></a>        <span class="st">'priceLabel'</span><span class="sc">:</span> price_label_list,</span>
+<span id="cb7-73"><a href="#cb7-73" aria-hidden="true" tabindex="-1"></a>        <span class="st">'streetAddress'</span><span class="sc">:</span> street_address_list,</span>
+<span id="cb7-74"><a href="#cb7-74" aria-hidden="true" tabindex="-1"></a>        <span class="st">'zipcode'</span><span class="sc">:</span> zipcode_list,</span>
+<span id="cb7-75"><a href="#cb7-75" aria-hidden="true" tabindex="-1"></a>        <span class="st">'city'</span><span class="sc">:</span> city_list,</span>
+<span id="cb7-76"><a href="#cb7-76" aria-hidden="true" tabindex="-1"></a>        <span class="st">'state'</span><span class="sc">:</span> state_list</span>
+<span id="cb7-77"><a href="#cb7-77" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb7-78"><a href="#cb7-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-79"><a href="#cb7-79" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Create the dataframe</span></span>
+<span id="cb7-80"><a href="#cb7-80" aria-hidden="true" tabindex="-1"></a>    df <span class="ot">=</span> <span class="fu">pd.DataFrame</span>(data_dict)</span>
+<span id="cb7-81"><a href="#cb7-81" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-82"><a href="#cb7-82" aria-hidden="true" tabindex="-1"></a>    return df</span>
+<span id="cb7-83"><a href="#cb7-83" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb7-84"><a href="#cb7-84" aria-hidden="true" tabindex="-1"></a><span class="co"># Call the function and get the resulting dataframe</span></span>
+<span id="cb7-85"><a href="#cb7-85" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> <span class="fu">parse_results_to_dataframe</span>(results)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 </section>
@@ -472,7 +616,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Using Bayes’ rule, we can formalize this process as:</p>
 <p><span class="math display">\[p(\mu | \mathbf{y}) = \frac{ p(\mu) p(\mathbf{y} | \mu) }{ p(\mathbf{y}) }\]</span></p>
 <p>In practice, we can drop the denominator and instead only consider terms that contain our parameter <span class="math inline">\(\mu\)</span>. Note that <span class="math inline">\(p(\mu | \mathbf{y})\)</span> is a probability density function with <span class="math inline">\(\int p(\mu | \mathbf{y}) d\mu = 1\)</span>, and what matters is how <span class="math inline">\(p(\mu | \mathbf{y})\)</span> depends on <span class="math inline">\(\mu\)</span>. Clearly <span class="math inline">\(p(\mathbf{y})\)</span> does not very with <span class="math inline">\(\mu\)</span>, so this term in the denominator only functions as scaling factor. As a result, it’s potentially easier to formulate the posterior approximately as: <span class="math display">\[p(\mu | \mathbf{y}) \propto  p(\mu)p(\mathbf{y} | \mu)\]</span> or: <span class="math display">\[ posterior \propto prior \times likelihood\]</span></p>
-<p>Without losing the thread, I want to note again how wildly useful this framework of obtaining posterior distributions for our parameter of interest is. Using Bayes’ rule, we obtain a full probability model for our parameter of interest (in this case, <span class="math inline">\(\mu\)</span>), which is incredibly useful for conducting inference, and one of the primary actionable benefits that one gains when working in the Bayesian framework. Since we obtain a full probability model, we can summarize any information that we might need. I’m actually of the view that going full Bayesian does <strong>not yet</strong> require us to view probability under a new philosophical light<a href="#fn9" class="footnote-ref" id="fnref9" role="doc-noteref"><sup>9</sup></a> (I see it more as a way to be explicit about modeling assumptions and to incorporate additional uncertainty), but these small tweaks to the <em>world view</em> can be a helpful way to ease the transition. As you continue on your Bayesian journey (as we all must), it will soon make sense how contrasting views of probability can derive these consequential differences in our modeling approach.</p>
+<p>Without losing the thread, I want to note again how wildly useful this framework of obtaining posterior distributions for our parameter of interest is. Using Bayes’ rule, we obtain a full probability model for our parameter of interest (in this case, <span class="math inline">\(\mu\)</span>), which is incredibly useful for conducting inference, and one of the primary actionable benefits that one gains when working in the Bayesian framework. Since we obtain a full probability model, we can summarize any information that we might need. I’m actually of the view that going full Bayesian does <strong>not yet</strong> require us to view probability under a new philosophical light<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> (I see it more as a way to be explicit about modeling assumptions and to incorporate additional uncertainty), but these small tweaks to the <em>world view</em> can be a helpful way to ease the transition. As you continue on your Bayesian journey (as we all must), it will soon make sense how contrasting views of probability can derive these consequential differences in our modeling approach.</p>
 </section>
 <section id="section-2-introduction-to-bayesian-hierarchical-modeling" class="level2">
 <h2 class="anchored" data-anchor-id="section-2-introduction-to-bayesian-hierarchical-modeling">Section 2: Introduction to Bayesian Hierarchical Modeling</h2>
@@ -484,7 +628,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>In the next section, we’ll work with an example examining air quality within cities. For now, let’s introduce this problem conceptually.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <ul>
@@ -506,7 +650,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Figure 2 visualizes this problem using simulated data. While this approach isn’t necessarily a bad one, it forces us to think constructively about the validity of our sampling approach and question if <span class="math inline">\(\hat{y}_j\)</span> is truly a strong estimate of <span class="math inline">\(y_j\)</span>.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 </section>
@@ -524,13 +668,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><p><span class="math inline">\(\mu_{\alpha}\)</span> represents the mean of the city AQI levels,</p></li>
 <li><p><span class="math inline">\(\sigma_{\alpha}^2\)</span> represents the between-city variance</p></li>
 </ul>
-<p>Due to this hierarchical set-up, our estimates for city mean AQI will be between the estimates derived from the no pooling and complete pooling methods presented earlier. Typically, we say that the <strong>partially pooled</strong> mean is shrunk from the no pooling city sample mean towards the complete pooling state mean. This part might not be super intuitive, but we’ll break it down a bit further. First, we can observe that the extent of shrinkage<a href="#fn10" class="footnote-ref" id="fnref10" role="doc-noteref"><sup>10</sup></a> from the city-level sample mean towards the state mean <em>decreases</em> with sample size. In other words, as we observe more data at the city-level, the partially-pooled mean is <em>more</em> reliant on that city-level data. Put another way, when we observe enough data from a city to be confident in our sample mean, we become <em>less</em> reliant on the broader state-level mean.</p>
-<p>To formalize this, let’s observe the conditional distribution <span class="math inline">\(\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha}\)</span>. For the multilevel model <span class="math display">\[y_i | \alpha_j[i], \sigma_y \sim N(\alpha{j[i]}, \sigma_y^2)\]</span> with <span class="math display">\[\alpha_j | \mu_{\alpha}, \sigma_{\alpha}^2 \sim N(\mu_{\alpha}, \sigma_{\alpha}^2)\]</span> the conditional distribution for the <span class="math inline">\(j\)</span>-th state mean is given by: <span class="math display">\[\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha} \sim N(m,v),\]</span> <span class="math display">\[v = (n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)^{-1},\]</span> <span class="math display">\[m = v \times (\frac{n_j}{\sigma_y^2}\times \bar{y}_j + \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha}) \Rightarrow \frac{(\frac{n_j}{\sigma_y^2}\times \bar{y}_j + \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha})}{(n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)},\]</span> where <span class="math inline">\(n_j\)</span> is the number of observations (in this case, monitors) in city <span class="math inline">\(j\)</span>.<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a></p>
+<p>Due to this hierarchical set-up, our estimates for city mean AQI will be between the estimates derived from the no pooling and complete pooling methods presented earlier. Typically, we say that the <strong>partially pooled</strong> mean is shrunk from the no pooling city sample mean towards the complete pooling state mean. This part might not be super intuitive, but we’ll break it down a bit further. First, we can observe that the extent of shrinkage<a href="#fn11" class="footnote-ref" id="fnref11" role="doc-noteref"><sup>11</sup></a> from the city-level sample mean towards the state mean <em>decreases</em> with sample size. In other words, as we observe more data at the city-level, the partially-pooled mean is <em>more</em> reliant on that city-level data. Put another way, when we observe enough data from a city to be confident in our sample mean, we become <em>less</em> reliant on the broader state-level mean.</p>
+<p>To formalize this, let’s observe the conditional distribution <span class="math inline">\(\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha}\)</span>. For the multilevel model <span class="math display">\[y_i | \alpha_j[i], \sigma_y \sim N(\alpha{j[i]}, \sigma_y^2)\]</span> with <span class="math display">\[\alpha_j | \mu_{\alpha}, \sigma_{\alpha}^2 \sim N(\mu_{\alpha}, \sigma_{\alpha}^2)\]</span> the conditional distribution for the <span class="math inline">\(j\)</span>-th state mean is given by: <span class="math display">\[\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha} \sim N(m,v),\]</span> <span class="math display">\[v = (n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)^{-1},\]</span> <span class="math display">\[m = v \times (\frac{n_j}{\sigma_y^2}\times \bar{y}_j + \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha}) \Rightarrow \frac{(\frac{n_j}{\sigma_y^2}\times \bar{y}_j + \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha})}{(n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)},\]</span> where <span class="math inline">\(n_j\)</span> is the number of observations (in this case, monitors) in city <span class="math inline">\(j\)</span>.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a></p>
 <p>Given this, <span class="math inline">\(E[\alpha_j]\)</span> is given by <span class="math inline">\(m_j = w_j\bar{y}_j + (1 - w_j) \mu_{\alpha}\)</span>, the weighted average of city sample mean <span class="math inline">\(\bar{y}_j\)</span> and the mean of city-level means <span class="math inline">\(\mu_{\alpha}\)</span>. Notably, the weight <span class="math inline">\(w_j\)</span> is defined by <span class="math display">\[w_j = \frac{n_j}{\sigma_y^2} \times (n_j/\sigma_y^2 + 1/\sigma_{\alpha}^2)^{-1},\]</span> which increases with <span class="math inline">\(n_j\)</span> (the number of observations, in this case monitors, in city <span class="math inline">\(j\)</span>). While a bit long-winded, we can now see formally why the partially pooled estimate of <span class="math inline">\(\alpha_j\)</span> is shrunk from the city mean towards the state mean for cities with small sample sizes.</p>
 <p>Next, we can visualize this process to continue understanding the intuition behind partial pooling. Figure 3 plots the difference between <span class="math inline">\(\alpha_j\)</span> (the partially pooled mean of city <span class="math inline">\(j\)</span>) and <span class="math inline">\(\bar{y}_j\)</span> (the sample mean for city <span class="math inline">\(j\)</span>) on the y-axis and the number of monitors by city (the number of observations) on the x-axis. In doing so, we see that as the number of monitors increases (as the number of <span class="math inline">\(n\)</span> observations increase), the difference between our two mean estimates shrinks towards zero. In other words, here we intuitively visualize that as the number of observations in a given city increases, our estimated mean grows closer to the city sample mean.</p>
 <div class="cell">
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>For one final note, bear in mind that in order to estimate a full Bayesian hierarchical model of the stated form, we’ll need to establish priors on all model parameters: <span class="math inline">\(\sigma_y, \ \mu_{\alpha}, \ \sigma_{\alpha}\)</span>. Lucky for us, we’ll show in the next section that ‘brms()’ can be a great tool for providing default priors.</p>
@@ -541,67 +685,67 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h2 class="anchored" data-anchor-id="section-3-brms-and-applications-of-hierarchical-modeling-in-stan">Section 3: ‘brms()’ and Applications of Hierarchical Modeling in Stan</h2>
 <p>In this section, we’ll apply our knowledge of hierarchical models to a simple motivating example. Here we’ll construct a two-level hierarchical model for estimating group means using a normal distribution. To do this, we’ll again utilize the simulated data introduced earlier. Here is the code to reproduce this data on your own. For the non-Bayesians among us, I’ve included a brief review of ‘brms()’ and MCMC sampling that those with sufficient experience can feel free to skip.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set seed for reproducibility</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the number of cities</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>num_cities <span class="ot">&lt;-</span> <span class="dv">50</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the mean AQI values for each city</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>city_means <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">50</span>, <span class="dv">250</span>, <span class="at">length.out =</span> num_cities)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create an empty data frame to store the simulated data</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through each city</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>num_cities) {</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Define the number of observations per city (varying significantly)</span></span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>  num_obs <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="dv">1</span>, <span class="at">lambda =</span> <span class="dv">50</span>)</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Simulate AQI values for the city using normal distribution</span></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  city_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">aqi =</span> <span class="fu">rnorm</span>(num_obs, <span class="at">mean =</span> city_means[i], <span class="at">sd =</span> <span class="dv">10</span>))</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add a city identifier variable</span></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>  city_data<span class="sc">$</span>city <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"City"</span>, i)</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Append the city data to the overall dataset</span></span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  dat <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(dat, city_data)</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set seed for reproducibility</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the number of cities</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>num_cities <span class="ot">&lt;-</span> <span class="dv">50</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Define the mean AQI values for each city</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>city_means <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">50</span>, <span class="dv">250</span>, <span class="at">length.out =</span> num_cities)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Create an empty data frame to store the simulated data</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">data.frame</span>()</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through each city</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>num_cities) {</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Define the number of observations per city (varying significantly)</span></span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  num_obs <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="dv">1</span>, <span class="at">lambda =</span> <span class="dv">50</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Simulate AQI values for the city using normal distribution</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  city_data <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">aqi =</span> <span class="fu">rnorm</span>(num_obs, <span class="at">mean =</span> city_means[i], <span class="at">sd =</span> <span class="dv">10</span>))</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Add a city identifier variable</span></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>  city_data<span class="sc">$</span>city <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"City"</span>, i)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Append the city data to the overall dataset</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>  dat <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(dat, city_data)</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <section id="review-of-brms-and-mcmc-sampling" class="level3">
 <h3 class="anchored" data-anchor-id="review-of-brms-and-mcmc-sampling">Review of ‘brms()’ and MCMC sampling</h3>
-<p>Before we dive in, let’s run through a brief description and review of the ‘brms()’ package in R. The ‘brms()’ package allows us to estimate multilevel models in Stan through our familiar R interface. Stan provides an MCMC sampler for Bayesian analysis by implementing a Hamiltonian Monte Carlo algorithm that converges comparatively quickly even in cases of high-dimensional models and non-conjugate priors.<a href="#fn12" class="footnote-ref" id="fnref12" role="doc-noteref"><sup>12</sup></a> If you’re thinking <em>wow, that sounds cool - I wonder how that works?</em> you’re just gonna have to keep wondering because I also have no clue. If I tried to explain, I’d just get it wrong and then whoops no one knows anything anymore. But man, what a cool bunch of words!</p>
+<p>Before we dive in, let’s run through a brief description and review of the ‘brms()’ package in R. The ‘brms()’ package allows us to estimate multilevel models in Stan through our familiar R interface. Stan provides an MCMC sampler for Bayesian analysis by implementing a Hamiltonian Monte Carlo algorithm that converges comparatively quickly even in cases of high-dimensional models and non-conjugate priors.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> If you’re thinking <em>wow, that sounds cool - I wonder how that works?</em> you’re just gonna have to keep wondering because I also have no clue. If I tried to explain, I’d just get it wrong and then whoops no one knows anything anymore. But man, what a cool bunch of words!</p>
 <p>What you need to know is this: Bayesian stats is incredibly computationally intensive, and only through advances in modern computation are we able to do it. Posterior distributions, which are so very useful for inference, often can’t be solved analytically. Moreover, common choices of priors often do not result in closed form expressions. The good news is as long as we can obtain a sample from the distribution of interest, we can conduct inference. This is where <strong>Markov Chain Monte Carlo (MCMC)</strong> sampling comes in. Let’s say our goal is to estimate two parameters <span class="math inline">\((\mu, \sigma)\)</span> when <span class="math inline">\(y_i | \mu, \sigma \sim N(\mu, \sigma^2)\)</span> but for common choices of priors on <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> there is no closed form solution for the posterior distribution <span class="math inline">\(p(\mu | \mathbf{y})\)</span>. If we identify a target parameter vector <span class="math inline">\(\phi = (\mu , \sigma)\)</span>, MCMC allows us to obtain samples <span class="math inline">\(\phi^{(s)}\)</span> from the target distribution <span class="math inline">\(p(\phi | \mathbf{y})\)</span>. Under the Markov property, <span class="math inline">\(\phi^{(s)}\)</span> depends on <span class="math inline">\(\phi^{(s-1)}, \phi^{(s-2)}, ... , \phi^{(1)}\)</span> only though <span class="math inline">\(\phi^{(s-1)}\)</span>. We then approximate quantities of interest, for example <span class="math inline">\(E(\mu | \mathbf{y})\)</span>, using the resulting samples - hence the additional MC for Monte Carlo.</p>
 <p>So in short, Stan provides a (relatively) computationally efficient method for obtaining posterior samples, and ‘brms()’ provides a more intuitive method of interacting with simple Stan models. If there is sufficient interest, I’d be happy to do a follow up series on programming in Stan and MCMC sampling.</p>
 <p>With that background out of the way, let’s install and load the ‘brms()’ package.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("brms")</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(brms)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co">#install.packages("brms")</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(brms)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The ‘brms()’ package functions the same as our simple lm() function - albiet for a few additional parameters. We still use the general forula <span class="math inline">\(y \sim 1\)</span> to estimate <span class="math inline">\(\mu\)</span> in <span class="math inline">\(y_i | \mu, \sigma \sim N(\mu, \sigma)\)</span>. If we choose not to specify priors (wow, not very Bayesian of us), ‘brms()’ provides defaults. For now, let’s fit a simple model to estimate the mean of a subset of our simulated (read: fake) AQI data. Note: my code will look a bit different from yours if you’re following along. This is because even simple Bayesian models can take a while to run, so I’ve included a statement telling R to only run the model if it has not been run before. If this does not apply to you, feel free to use only the bits under ‘# fit the model.’ Furthermore, since we are starting simple, this model does not include many of the additional arguments ‘brms()’ allows us to specify. As we move forward, we will begin including more to improve the efficiency of this model.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load necessary packages</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># subset simulated AQI data to a single city</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>city1 <span class="ot">&lt;-</span> dat <span class="sc">%&gt;%</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(city <span class="sc">==</span> <span class="st">"City1"</span>)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model2.rds"</span>)) {</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> city1)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit, <span class="st">"saved_model2.rds"</span>)</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># load necessary packages</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># subset simulated AQI data to a single city</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>city1 <span class="ot">&lt;-</span> dat <span class="sc">%&gt;%</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">subset</span>(city <span class="sc">==</span> <span class="st">"City1"</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model2.rds"</span>)) {</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> city1)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit, <span class="st">"saved_model2.rds"</span>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: gaussian 
   Links: mu = identity; sigma = identity 
@@ -635,14 +779,14 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <p>One important aspect of MCMC sampling diagnostics is chain convergence. Convergence refers to the property that the chains have explored the posterior distribution sufficiently and have reached a stationary state where further sampling does not significantly affect the results. In other words, the chains have “mixed” well and are sampling from the target distribution. If the chains have not converged, the samples may not accurately represent the posterior distribution, and any inferences drawn from them could be biased or misleading.</p>
 <p>To assess chain convergence, various diagnostic methods can be employed. One commonly used approach is based on the examination of trace plots. A trace plot displays the values of a parameter across iterations (samples) of the MCMC algorithm for each chain. By visually inspecting the trace plots, one can look for indications of convergence, such as stable behavior, absence of large trends, and absence of excessive autocorrelation (i.e., dependence between consecutive samples). If the trace plots exhibit erratic or unstable patterns, it suggests that further sampling may be required to achieve convergence. Figure 4 presents the trace plot for our earlier Bayesian model. This plot shows the sampled parameter against the iteration number. Notice in both Figure 4 and our model output an initial phase of the MCMC chain, when the chain converges away from initial values towards the target distribution. This is called the <strong>burn-in phase</strong> and allows us to discard the autocorrelated period when <span class="math inline">\(s+1\)</span> depends on <span class="math inline">\(s\)</span>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit, <span class="at">variable =</span> <span class="fu">c</span>(<span class="st">"b_Intercept"</span>, <span class="st">"sigma"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(fit, <span class="at">variable =</span> <span class="fu">c</span>(<span class="st">"b_Intercept"</span>, <span class="st">"sigma"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="blog_formatting_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+<p><img src="blog_formatting_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>We can also use ‘brms()’ to visualize the full posterior distribution for our target parameters. Figure 4 thus includes both the trace plots and posterior densities for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span>. Using these plots, we see evidence that our chains are mixing well and autocorrelation in the sampled values is low.</p>
-<p>Aside from mixing, we still need to ensure that we’ve generated an appropriate number of samples. To do this, we rely on two new diagnostic criteria: <span class="math inline">\(\hat{R}\)</span> and effective sample size. First, The Gelman-Rubin convergence diagnostic statistic <span class="math inline">\(\hat{R}\)</span> compares the within-chain and between-chain variances to assess convergence.<a href="#fn13" class="footnote-ref" id="fnref13" role="doc-noteref"><sup>13</sup></a> When chains are mixed well the <span class="math inline">\(\hat{R}\)</span> is close to <span class="math inline">\(1\)</span>. Values greater than <span class="math inline">\(1\)</span> suggest lack of convergence. Lucky for us, ‘brms()’ automatically computes <span class="math inline">\(\hat{R}\)</span> for each parameter. A good rule of thumb is to run at least four chains (the more the better!) with disperse starting points and to aim for <span class="math inline">\(\hat{R} &lt; 1.05\)</span>. As a result, we see that our model output suggests the chains have converged on both parameters.</p>
-<p>Next, let’s look at effective sample size <span class="math inline">\(S_{eff}\)</span>. Here, effective sample size gives us the number of independent MC samples that would give the same precision for estimating the mean, as obtained with the MCMC sample of size <span class="math inline">\(S\)</span>. Put simply, effective sample size quantifies the effective number of independent samples obtained from the MCMC chains. If the chains are highly autocorrelated, the effective sample size will be smaller than the actual sample size.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> For example, if our sample size <span class="math inline">\(S = 2000\)</span>, but <span class="math inline">\(S_{eff} \approx 11\)</span>, then our chains are autocorrelated. The ‘brms()’ output reports both bulk-ESS and tail-ESS, which measure the effective sample size for mean and median estimates, and the minimum effective sample size for <span class="math inline">\(5 \%\)</span> and <span class="math inline">\(95 \%\)</span> quantiles, respectively. Per Markov Chain, we want bulk-ESS and tail-ESS to be <span class="math inline">\(\ge 100\)</span>. If there are issues presented by either <span class="math inline">\(S_{eff}\)</span> or <span class="math inline">\(\hat{R}\)</span>, we know something is wrong. That being said, the magnitude of the problem can vary, and we can often increase the number of iterations to increase the warm-up and resolve the issue. In other cases, it may be necessary to reparametrize and tune the MCMC parameters.</p>
+<p>Aside from mixing, we still need to ensure that we’ve generated an appropriate number of samples. To do this, we rely on two new diagnostic criteria: <span class="math inline">\(\hat{R}\)</span> and effective sample size. First, The Gelman-Rubin convergence diagnostic statistic <span class="math inline">\(\hat{R}\)</span> compares the within-chain and between-chain variances to assess convergence.<a href="#fn14" class="footnote-ref" id="fnref14" role="doc-noteref"><sup>14</sup></a> When chains are mixed well the <span class="math inline">\(\hat{R}\)</span> is close to <span class="math inline">\(1\)</span>. Values greater than <span class="math inline">\(1\)</span> suggest lack of convergence. Lucky for us, ‘brms()’ automatically computes <span class="math inline">\(\hat{R}\)</span> for each parameter. A good rule of thumb is to run at least four chains (the more the better!) with disperse starting points and to aim for <span class="math inline">\(\hat{R} &lt; 1.05\)</span>. As a result, we see that our model output suggests the chains have converged on both parameters.</p>
+<p>Next, let’s look at effective sample size <span class="math inline">\(S_{eff}\)</span>. Here, effective sample size gives us the number of independent MC samples that would give the same precision for estimating the mean, as obtained with the MCMC sample of size <span class="math inline">\(S\)</span>. Put simply, effective sample size quantifies the effective number of independent samples obtained from the MCMC chains. If the chains are highly autocorrelated, the effective sample size will be smaller than the actual sample size.<a href="#fn15" class="footnote-ref" id="fnref15" role="doc-noteref"><sup>15</sup></a> For example, if our sample size <span class="math inline">\(S = 2000\)</span>, but <span class="math inline">\(S_{eff} \approx 11\)</span>, then our chains are autocorrelated. The ‘brms()’ output reports both bulk-ESS and tail-ESS, which measure the effective sample size for mean and median estimates, and the minimum effective sample size for <span class="math inline">\(5 \%\)</span> and <span class="math inline">\(95 \%\)</span> quantiles, respectively. Per Markov Chain, we want bulk-ESS and tail-ESS to be <span class="math inline">\(\ge 100\)</span>. If there are issues presented by either <span class="math inline">\(S_{eff}\)</span> or <span class="math inline">\(\hat{R}\)</span>, we know something is wrong. That being said, the magnitude of the problem can vary, and we can often increase the number of iterations to increase the warm-up and resolve the issue. In other cases, it may be necessary to reparametrize and tune the MCMC parameters.</p>
 <p>Now that we’ve introduced a few more diagnostics, we can return to our ‘brms()’ function to investigate a few more arguments. Below I’ve included a list explaining each argument in sufficient detail.</p>
 <ul>
 <li><p>‘chains = 4’: This argument determines the number of MCMC chains to run. In this example, the model will use four parallel chains. Running multiple chains helps assess chain convergence and improves the stability of the sampling process.</p></li>
@@ -651,19 +795,19 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <li><p>‘cores = getOption(“mc.cores”, 4)’: The ‘cores’ argument determines the number of CPU cores to be used for parallel computation. In this example, the ‘getOption(“mc.cores”, 4)’ part allows the model to automatically detect the available number of CPU cores. It uses either the number of cores specified by the user or defaults to 4 cores if not specified.</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model2.rds"</span>)) {</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> city1, </span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">1000</span>, <span class="at">warmup =</span> <span class="dv">500</span>, <span class="at">cores =</span> <span class="fu">getOption</span>(<span class="st">"mc.cores"</span>, <span class="dv">4</span>))</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit, <span class="st">"saved_model2.rds"</span>)</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model2.rds"</span>)) {</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  fit <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> city1, </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">chains =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">1000</span>, <span class="at">warmup =</span> <span class="dv">500</span>, <span class="at">cores =</span> <span class="fu">getOption</span>(<span class="st">"mc.cores"</span>, <span class="dv">4</span>))</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit, <span class="st">"saved_model2.rds"</span>)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="hierarchical-modeling-in-brms" class="level3">
@@ -672,23 +816,23 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <p>Let’s return once again to our simulated AQI example. Just as before, our goal is to estimate the expected AQI in each city. Fitting the model hierarchically allows us to generate partially-pooled estimates, where our within-city means are shrunk towards the state-level mean as the city sample size decreases. It’s sorta like magic, and if it makes you feel ~a certain type of way~ I wouldn’t blame you.</p>
 <p>For this simplified model with no additional predictors, it’s fairly straightforward to estimate in ‘brms()’. To do so, we add “| grouping variable” to any covariate (in this case, the intercept) for which we aim to estimate group-specific parameters. The ‘brms()’ package also provides output on group-level effects (<span class="math inline">\(\hat{\sigma}_n = 60.14\)</span>), population-level effects (<span class="math inline">\(\hat{\mu}_{\alpha} =151.16\)</span>), and family-specific parameters (<span class="math inline">\(\hat{\sigma}_y = 10.02\)</span>). We are also blessed to be given the number of levels (here <span class="math inline">\(50\)</span>) which can serve as a fail safe to ensure we haven’t made some glaring mistake. Finally, notice that I’ve bumped up the chains and iterations as an easy tweak to improve convergence. As a fun exercise, try messing with these arguments and glance at the <span class="math inline">\(\hat{R}\)</span> and trace plots to see an example of what not to do.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model.rds"</span>)) {</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  fit2 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model (note the addition of the grouping variable)</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  fit2 <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> (<span class="dv">1</span><span class="sc">|</span>city),</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> dat,</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">iter =</span> <span class="dv">3000</span>,</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">chains =</span> <span class="dv">4</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">cores =</span> <span class="fu">getOption</span>(<span class="st">"mc.cores"</span>, <span class="dv">4</span>))</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit2, <span class="st">"saved_model.rds"</span>)</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if the saved model exists</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">file.exists</span>(<span class="st">"saved_model.rds"</span>)) {</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Load the saved model</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  fit2 <span class="ot">&lt;-</span> <span class="fu">readRDS</span>(<span class="st">"saved_model.rds"</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Fit the model (note the addition of the grouping variable)</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  fit2 <span class="ot">&lt;-</span> <span class="fu">brm</span>(aqi <span class="sc">~</span> (<span class="dv">1</span><span class="sc">|</span>city),</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> dat,</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">iter =</span> <span class="dv">3000</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>             <span class="at">chains =</span> <span class="dv">4</span>,</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>             <span class="at">cores =</span> <span class="fu">getOption</span>(<span class="st">"mc.cores"</span>, <span class="dv">4</span>))</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Save the fitted model</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">saveRDS</span>(fit2, <span class="st">"saved_model.rds"</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(fit2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code> Family: gaussian 
   Links: mu = identity; sigma = identity 
@@ -738,20 +882,21 @@ scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
 <div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
-<li id="fn1"><p>To be honest, I only somewhat answer this question<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2"><p>The phrase “so you wouldn’t have to” is really the theme of today’s post. Nothing here is terribly surprising, but it’s nice to see all plotted out for us.<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn3"><p>https://www.huduser.gov/portal/pdredge/pdr_edge_featd_article_092214.html<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn4"><p>https://www.census.gov/quickfacts/fact/table/MA/INC110221<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn5"><p>https://www.boston.gov/sites/default/files/file/2022/05/Presentation.pdf<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1"><p>https://mc-stan.org/<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>To be honest, I only somewhat answer this question<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3"><p>The phrase “so you wouldn’t have to” is really the theme of today’s post. Nothing here is terribly surprising, but it’s nice to see all plotted out for us.<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4"><p>https://www.huduser.gov/portal/pdredge/pdr_edge_featd_article_092214.html<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5"><p>https://www.census.gov/quickfacts/fact/table/MA/INC110221<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 <li id="fn6"><p>https://www.boston.gov/sites/default/files/file/2022/05/Presentation.pdf<a href="#fnref6" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn7"><p>https://www.jchs.harvard.edu/americas-rental-housing-2022<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn8"><p>you know how it is<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn9"><p>Yes, I am well aware that there are massive philosophical differences in the view of probability and that they facilitate the methods, I am just not of the view that we need to necessarily agree with either in order to benefit from what each framework can deliver.<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn10"><p>lmao<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn11"><p>verifying this goes a bit beyond the scope of this blog, but we can use Bayes rule to express the full conditional distribution into probability density functions: <span class="math inline">\(p(\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha}) \propto p(\mathbf{y} | \alpha_j, \sigma_y) \times p(\alpha_j | \mu_{\alpha}, \sigma_{\alpha})\)</span>.<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn12"><p>https://www.jstatsoft.org/article/view/v080i01, https://www.jmlr.org/papers/volume15/hoffman14a/hoffman14a.pdf, https://www.sciencedirect.com/science/article/pii/037026938791197X?via%3Dihub<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn13"><p>https://mc-stan.org/rstan/reference/Rhat.html<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn14"><p>The details for both effective sample size and <span class="math inline">\(\hat{R}\)</span> are not important for the scope of this tutorial.<a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn7"><p>https://www.boston.gov/sites/default/files/file/2022/05/Presentation.pdf<a href="#fnref7" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn8"><p>https://www.jchs.harvard.edu/americas-rental-housing-2022<a href="#fnref8" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn9"><p>you know how it is<a href="#fnref9" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn10"><p>Yes, I am well aware that there are massive philosophical differences in the view of probability and that they facilitate the methods, I am just not of the view that we need to necessarily agree with either in order to benefit from what each framework can deliver.<a href="#fnref10" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn11"><p>lmao<a href="#fnref11" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn12"><p>verifying this goes a bit beyond the scope of this blog, but we can use Bayes rule to express the full conditional distribution into probability density functions: <span class="math inline">\(p(\alpha_j | \mathbf{y}, \mu_{\alpha}, \sigma_y, \sigma_{\alpha}) \propto p(\mathbf{y} | \alpha_j, \sigma_y) \times p(\alpha_j | \mu_{\alpha}, \sigma_{\alpha})\)</span>.<a href="#fnref12" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn13"><p>https://www.jstatsoft.org/article/view/v080i01, https://www.jmlr.org/papers/volume15/hoffman14a/hoffman14a.pdf, https://www.sciencedirect.com/science/article/pii/037026938791197X?via%3Dihub<a href="#fnref13" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn14"><p>https://mc-stan.org/rstan/reference/Rhat.html<a href="#fnref14" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn15"><p>The details for both effective sample size and <span class="math inline">\(\hat{R}\)</span> are not important for the scope of this tutorial.<a href="#fnref15" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
