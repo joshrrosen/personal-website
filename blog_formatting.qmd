@@ -6,6 +6,8 @@ editor: visual
 
 # Bayesian Hierarchical Modeling Part 2: Working with Stan
 
+*August 26, 2023*
+
 ## Introduction
 
 Today's follow-up to my original post on Bayesian Hierarchical Modeling in R will deviate slightly from the topics we covered in part 1. Instead, this post will focus entirely on the basics of writing models in Stan. A few keen observers may recognize that some elements promised in Part 1 are conveniently absent from today's outline. Rest assured, Part 3 will be entirely dedicated to the following topics:
