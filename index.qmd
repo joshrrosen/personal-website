@@ -31,7 +31,8 @@ My name is Josh Rosen and I am a Doctoral student at Northeastern University stu
 
 My interests include human mobility modeling, causal inference, and harnessing big data for empirical applications in urban economics. 
 
-I am currently affiliated with the [Boston Area Research Initiative][https://cssh.northeastern.edu/bari/], and the [SUNLab][http://estebanmoro.org/tags/sun/]. I am a member of the 2024 [PEAR NSF Research Traineeship][https://pear.research.northeastern.edu/] cohort, with a specialization track in Modeling and Algorithms.
+I am currently affiliated with the [Boston Area Research Initiative](https://cssh.northeastern.edu/bari/), and the [SUNLab](http://estebanmoro.org/tags/sun/). I am a member of the 2024 [PEAR NSF Research Traineeship](https://pear.research.northeastern.edu/) cohort, with a specialization track in Modeling and Algorithms.
+
 
 
 :::
