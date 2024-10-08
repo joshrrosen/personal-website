@@ -27,8 +27,11 @@ about:
 :::{#ppc}
 Welcome to my site! 
 
-My name is Josh Rosen and I am a Doctoral student at Northeastern University studying causal inference and computational social science. 
+My name is Josh Rosen and I am a Doctoral student at Northeastern University studying Computational Social Science. 
 
-My interests include Bayesian inference, time series econometrics, and empirical applications to urban economics.
+My interests include human mobility modeling, causal inference, and harnessing big data for empirical applications in urban economics. 
+
+I am currently affiliated with the [Boston Area Research Initiative][https://cssh.northeastern.edu/bari/], and the [SUNLab][http://estebanmoro.org/tags/sun/]. I am a member of the 2024 [PEAR NSF Research Traineeship][https://pear.research.northeastern.edu/] cohort, with a specialization track in Modeling and Algorithms.
+
 
 :::
