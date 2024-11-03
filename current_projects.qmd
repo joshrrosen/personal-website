@@ -3,4 +3,24 @@ title: "Current Projects"
 editor: visual
 ---
 
-Check back soon!
+## Causal Inference
+
+**The Causal Impact of Continuing Legal Education (CLE) Requirements on Legal Outcomes** with [Kishan Narayan](https://narayankishan.github.io/research-writings/)
+
+This research investigates whether mandatory Continuing Legal Education (CLE) requirements for practicing lawyers actually improve legal service quality and professional conduct. Leveraging the variation in CLE policies across U.S. states, the study aims to establish causal evidence on whether these educational mandates reduce malpractice rates or enhance legal service quality. The research employs multiple empirical strategies, including synthetic control methods and instrumental variables approaches, while utilizing comprehensive data from national lawyer databases and malpractice claims records. The study addresses key confounding factors such as differences in legal practice types, lawyer quality, and state-specific claiming behaviors. By examining this important question, the research contributes to broader discussions about professional licensing, human capital formation, and the effectiveness of continuing education requirements in professional services markets.
+
+## Science of Science
+
+**A Tale of Two Sciences: Exploring Cross-Disciplinary Divides in Computational Social Science**
+
+![](twitter_sociogram_1.png){fig-align="center"}
+
+*working paper coming soon!*
+
+## Urban Complex Systems
+
+**Multihazard Exposure and Environmental Injustice: The Correlation between Air Pollution and Heat Drives Socioeconomic Inequities** with Dan O'Brien, Mai Waziry, Takahiro Yabe, and Esteban Moro
+
+![](multihazard_image.jpg){fig-align="center"}
+
+*currently in review!*
