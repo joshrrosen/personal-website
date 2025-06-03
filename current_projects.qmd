@@ -5,9 +5,37 @@ editor: visual
 
 ## Causal Inference
 
+**The effect of digital rideshare on urban periphery development**
+
+Digital platforms are reshaping how people navigate and interact with cities, yet assessing their impact on urban development remains challenging due to spatial and temporal uncertainty in observational data. This paper estimates the causal effect of digital rideshare platforms on urban expansion at the periphery of U.S. cities. Leveraging the staggered rollout of Uber between 2010 and 2015, we implement a difference-in-differences design that exploits variation in launch timing across 167 geographic units. To measure development, we combine deep learning–based segmentation of satellite imagery with a novel uncertainty-aware spatio-temporal hidden Markov model (ST-HMM) that treats CNN outputs as noisy emissions from a latent built environment. This approach yields posterior probabilities of built-up land that are smoothed over space and time, allowing for robust inference. We find that access to rideshare services significantly increases the rate of peripheral development, particularly in areas with low transit accessibility. These findings are consistent with theoretical predictions from urban economic models, which posit that reductions in effective commuting costs expand the urban fringe. More broadly, our results highlight how digital transportation platforms—absent direct public investment—can reshape land use by altering the accessibility landscape of cities.
+
+*Presented at [UEA Summer School 2025](https://urbaneconomics.org/workshops/summerschool2025/program.pdf)*
+
+------------------------------------------------------------------------
+
 **The Causal Impact of Continuing Legal Education (CLE) Requirements on Legal Outcomes** with [Kishan Narayan](https://narayankishan.github.io/research-writings/)
 
 This research investigates whether mandatory Continuing Legal Education (CLE) requirements for practicing lawyers actually improve legal service quality and professional conduct. Leveraging the variation in CLE policies across U.S. states, the study aims to establish causal evidence on whether these educational mandates reduce malpractice rates or enhance legal service quality. The research employs multiple empirical strategies, including synthetic control methods and instrumental variables approaches, while utilizing comprehensive data from national lawyer databases and malpractice claims records. The study addresses key confounding factors such as differences in legal practice types, lawyer quality, and state-specific claiming behaviors. By examining this important question, the research contributes to broader discussions about professional licensing, human capital formation, and the effectiveness of continuing education requirements in professional services markets.
+
+------------------------------------------------------------------------
+
+## Urban Complex Systems
+
+**Multihazard Exposure and Environmental Injustice: The Correlation between Air Pollution and Heat Drives Socioeconomic Inequities** with Dan O'Brien, Mai Waziry, Takahiro Yabe, and Esteban Moro
+
+![](multihazard_image.jpg){fig-align="center"}
+
+*Currently in review!*
+
+------------------------------------------------------------------------
+
+**The temporal dimension of experienced segregation in cities** with Erik Weis, Brennan Klein, Hamish Gibbs, Dan O'Brien, Takahiro Yabe, and Esteban Moro
+
+![](2025-IC2S2_SpaceTime.jpg){fig-align="center"}
+
+*Presented at IC2S2 2025!*
+
+------------------------------------------------------------------------
 
 ## Science of Science
 
@@ -16,11 +44,3 @@ This research investigates whether mandatory Continuing Legal Education (CLE) re
 ![](twitter_sociogram_1.png){fig-align="center"}
 
 *working paper coming soon!*
-
-## Urban Complex Systems
-
-**Multihazard Exposure and Environmental Injustice: The Correlation between Air Pollution and Heat Drives Socioeconomic Inequities** with Dan O'Brien, Mai Waziry, Takahiro Yabe, and Esteban Moro
-
-![](multihazard_image.jpg){fig-align="center"}
-
-*currently in review!*
