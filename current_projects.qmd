@@ -23,7 +23,7 @@ This research investigates whether mandatory Continuing Legal Education (CLE) re
 
 ------------------------------------------------------------------------
 
-## Urban Complex Systems
+## Complex (Urban) Systems
 
 **Multihazard Exposure and Environmental Injustice: The Correlation between Air Pollution and Heat Drives Socioeconomic Inequities** with Dan O'Brien, Mai Waziry, Takahiro Yabe, and Esteban Moro
 
@@ -33,11 +33,19 @@ This research investigates whether mandatory Continuing Legal Education (CLE) re
 
 ------------------------------------------------------------------------
 
-**The temporal dimension of experienced segregation in cities** with Erik Weis, Brennan Klein, Hamish Gibbs, Dan O'Brien, Takahiro Yabe, and Esteban Moro
+**The temporal dimension of experienced segregation in cities** with Brennan Klein, Erik Weis, Hamish Gibbs, Sarah Sanchez, Dan O'Brien, Takahiro Yabe, and Esteban Moro
 
 ![](2025-IC2S2_SpaceTime.jpg){fig-align="center"}
 
 *Presented at IC2S2 2025!*
+
+------------------------------------------------------------------------
+
+**Preliminary analysis of Sus scrofa movement using hidden Markov models and Networks** with Riccardo Basilone, Eleonora Bergamin, Federica Fanelli, Ego Kotov, Kevin Morelle, Alisa Klamm, Manal Nhili, Andrew Schendl, Olena Holubowska, Andrew Renninger, Kamil Smolak \|
+
+![](figure1_boars.jpg){fig-align="center"}
+
+[*Pre-print available now!*](https://arxiv.org/html/2506.22138v1)
 
 ------------------------------------------------------------------------
 
